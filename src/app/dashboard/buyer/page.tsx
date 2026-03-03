@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
-import { redirect } from 'next/navigation';
-import Link from 'next/link';
-import Layout from '@/components/Layout';
-import Button from '@/components/ui/Button';
-import { Card, CardBody, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import Layout from "@/components/Layout";
+import Button from "@/components/ui/Button";
+import {
+  Card,
+  CardBody,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/Card";
 
 interface Purchase {
   id: string;
@@ -50,16 +56,19 @@ export default function BuyerDashboard() {
   const fetchPurchases = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/purchases');
+      const response = await fetch("/api/purchases");
       const data = await response.json();
-      
+
       if (Array.isArray(data)) {
         setPurchases(data);
-        const spent = data.reduce((sum: number, p: Purchase) => sum + p.amount, 0);
+        const spent = data.reduce(
+          (sum: number, p: Purchase) => sum + p.amount,
+          0,
+        );
         setTotalSpent(spent);
       }
     } catch (error) {
-      console.error('Error fetching purchases:', error);
+      console.error("Error fetching purchases:", error);
     } finally {
       setLoading(false);
     }
@@ -71,7 +80,7 @@ export default function BuyerDashboard() {
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
-  if (status === 'loading') {
+  if (status === "loading") {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-screen">
@@ -81,8 +90,8 @@ export default function BuyerDashboard() {
     );
   }
 
-  if (!session || session.user.role !== 'BUYER') {
-    redirect('/auth/login');
+  if (!session || session.user.role !== "BUYER") {
+    redirect("/auth/login");
   }
 
   return (
@@ -102,25 +111,43 @@ export default function BuyerDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <Card>
             <CardBody>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Kits Purchased</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{purchases.length}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">Total</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                Kits Purchased
+              </p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+                {purchases.length}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                Total
+              </p>
             </CardBody>
           </Card>
 
           <Card>
             <CardBody>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Spent</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">${totalSpent.toFixed(2)}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">All purchases</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                Total Spent
+              </p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+                ${totalSpent.toFixed(2)}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                All purchases
+              </p>
             </CardBody>
           </Card>
 
           <Card>
             <CardBody>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Deployments</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">0</p>
-              <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">Active</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                Deployments
+              </p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+                0
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                Active
+              </p>
             </CardBody>
           </Card>
         </div>
@@ -133,7 +160,8 @@ export default function BuyerDashboard() {
               Ready to Launch Your SaaS?
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Browse our marketplace and find the perfect starter kit for your idea
+              Browse our marketplace and find the perfect starter kit for your
+              idea
             </p>
             <div className="flex gap-3 justify-center">
               <Link href="/products">
@@ -156,7 +184,9 @@ export default function BuyerDashboard() {
             {loading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="text-gray-500 dark:text-gray-400 mt-2">Loading purchases...</p>
+                <p className="text-gray-500 dark:text-gray-400 mt-2">
+                  Loading purchases...
+                </p>
               </div>
             ) : purchases.length === 0 ? (
               <p className="text-center text-gray-500 dark:text-gray-400 py-8">
@@ -167,32 +197,36 @@ export default function BuyerDashboard() {
                 {purchases.map((purchase) => (
                   <div
                     key={purchase.id}
-                    className="p-6 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors"
-                  >
+                    className="p-6 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-4">
-                        <div className="text-5xl">{purchase.product.thumbnail || '📦'}</div>
+                        <div className="text-5xl">
+                          {purchase.product.thumbnail || "📦"}
+                        </div>
                         <div>
                           <h4 className="font-semibold text-lg text-gray-900 dark:text-white mb-1">
                             {purchase.product.title}
                           </h4>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Purchased on {new Date(purchase.createdAt).toLocaleDateString()}
+                            Purchased on{" "}
+                            {new Date(purchase.createdAt).toLocaleDateString()}
                           </p>
                           <div className="flex items-center gap-2 mt-2">
-                            <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                              purchase.status === 'COMPLETED'
-                                ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
-                                : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400'
-                            }`}>
+                            <span
+                              className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                purchase.status === "COMPLETED"
+                                  ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
+                                  : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400"
+                              }`}>
                               {purchase.status}
                             </span>
                             {purchase.licenseKey && (
-                              <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                purchase.licenseKey.status === 'ACTIVE'
-                                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
-                                  : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
-                              }`}>
+                              <span
+                                className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                  purchase.licenseKey.status === "ACTIVE"
+                                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
+                                    : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
+                                }`}>
                                 License: {purchase.licenseKey.status}
                               </span>
                             )}
@@ -214,7 +248,8 @@ export default function BuyerDashboard() {
                             🔑 License Key
                           </span>
                           <span className="text-xs text-gray-500 dark:text-gray-400">
-                            Activations: {purchase.licenseKey.activationCount}/{purchase.licenseKey.maxActivations}
+                            Activations: {purchase.licenseKey.activationCount}/
+                            {purchase.licenseKey.maxActivations}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -222,10 +257,16 @@ export default function BuyerDashboard() {
                             {purchase.licenseKey.key}
                           </code>
                           <button
-                            onClick={() => copyLicenseKey(purchase.licenseKey!.key, purchase.id)}
-                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg font-medium transition-colors"
-                          >
-                            {copiedKey === purchase.id ? '✓ Copied!' : '📋 Copy'}
+                            onClick={() =>
+                              copyLicenseKey(
+                                purchase.licenseKey!.key,
+                                purchase.id,
+                              )
+                            }
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg font-medium transition-colors">
+                            {copiedKey === purchase.id
+                              ? "✓ Copied!"
+                              : "📋 Copy"}
                           </button>
                         </div>
                       </div>
@@ -238,8 +279,7 @@ export default function BuyerDashboard() {
                           href={purchase.product.sourceRepoUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="px-4 py-2 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 text-sm rounded-lg font-medium transition-colors flex items-center gap-2"
-                        >
+                          className="px-4 py-2 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 text-sm rounded-lg font-medium transition-colors flex items-center gap-2">
                           <span>📦</span>
                           Access Repository
                         </a>
@@ -249,21 +289,16 @@ export default function BuyerDashboard() {
                           href={purchase.product.previewUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="px-4 py-2 border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm rounded-lg font-medium transition-colors flex items-center gap-2"
-                        >
+                          className="px-4 py-2 border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm rounded-lg font-medium transition-colors flex items-center gap-2">
                           <span>👁️</span>
                           Live Preview
                         </a>
                       )}
-                      <button
-                        className="px-4 py-2 border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm rounded-lg font-medium transition-colors flex items-center gap-2"
-                      >
+                      <button className="px-4 py-2 border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm rounded-lg font-medium transition-colors flex items-center gap-2">
                         <span>📖</span>
                         Documentation
                       </button>
-                      <button
-                        className="px-4 py-2 border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm rounded-lg font-medium transition-colors flex items-center gap-2"
-                      >
+                      <button className="px-4 py-2 border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm rounded-lg font-medium transition-colors flex items-center gap-2">
                         <span>💬</span>
                         Support
                       </button>
