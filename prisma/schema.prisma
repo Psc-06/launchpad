@@ -1,0 +1,280 @@
+// LaunchPad Marketplace Prisma Schema
+// A comprehensive platform for selling SaaS starter kits
+// SQLite version for development compatibility
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User model for authentication
+model User {
+  id            String     @id @default(cuid())
+  email         String     @unique
+  name          String?
+  password      String?
+  image         String?
+  role          String     @default("BUYER")  // SELLER, BUYER, ADMIN
+  emailVerified DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  // Relations
+  sellerProfile    SellerProfile?
+  buyerProfile     BuyerProfile?
+  products         Product[]
+  purchases        Purchase[]
+  purchasesAsSeller Purchase[] @relation("PurchaseSeller")
+  licenseKeys      LicenseKey[]
+  reviews          Review[]
+  analytics        SellerAnalytics?
+  notifications    Notification[]
+  sessions         Session[]
+
+  @@index([role])
+}
+
+// Session model for NextAuth
+model Session {
+  id            String     @id @default(cuid())
+  sessionToken  String     @unique
+  userId        String
+  expires       DateTime
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@index([userId])
+}
+
+// Seller Profile
+model SellerProfile {
+  id              String     @id @default(cuid())
+  userId          String     @unique
+  companyName     String
+  description     String?
+  avatar          String?
+  website         String?
+  verified        Boolean    @default(false)
+  verifiedAt      DateTime?
+  rating          Float      @default(0)
+  totalSales      Int        @default(0)
+  totalEarnings   Float      @default(0)
+  withdrawnEarnings Float    @default(0)
+  pendingEarnings Float      @default(0)
+  bankDetails     String?
+  stripeConnectId String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([verified])
+}
+
+// Buyer Profile
+model BuyerProfile {
+  id              String     @id @default(cuid())
+  userId          String     @unique
+  displayName     String?
+  avatar          String?
+  bio             String?
+  companyName     String?
+  totalSpent      Float      @default(0)
+  purchaseCount   Int        @default(0)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Product/SaaS Starter Kit
+model Product {
+  id              String     @id @default(cuid())
+  title           String
+  slug            String     @unique
+  description     String
+  shortDescription String?
+  thumbnail       String
+  images          String     @default("[]")  // JSON array stored as string
+  price           Float
+  category        String
+  tags            String     @default("[]")  // JSON array stored as string
+  features        String     @default("[]")  // JSON array stored as string
+  techStack       String     @default("[]")  // JSON array stored as string
+  previewUrl      String?
+  demoVideoUrl    String?
+  sourceRepoUrl   String?
+  status          String     @default("DRAFT")  // DRAFT, PUBLISHED, ARCHIVED
+  sellerId        String
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  // Metadata
+  downloads       Int        @default(0)
+  rating          Float      @default(0)
+  reviewCount     Int        @default(0)
+  featured        Boolean    @default(false)
+
+  // Relations
+  seller          User       @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  purchases       Purchase[]
+  reviews         Review[]
+  licenseKeys     LicenseKey[]
+  deployments     Deployment[]
+
+  @@index([sellerId])
+  @@index([status])
+  @@index([category])
+  @@index([createdAt])
+}
+
+// Purchase/Order
+model Purchase {
+  id              String     @id @default(cuid())
+  productId       String
+  buyerId         String
+  sellerId        String
+  amount          Float
+  currency        String     @default("USD")
+  status          String     @default("PENDING")  // PENDING, COMPLETED, FAILED, REFUNDED
+  stripePaymentId String?    @unique
+  invoiceId       String?    @unique
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  product         Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  buyer           User       @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  sellerUser      User       @relation("PurchaseSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+  licenseKey      LicenseKey?
+  deployment      Deployment?
+
+  @@index([productId])
+  @@index([buyerId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// License Keys
+model LicenseKey {
+  id              String     @id @default(cuid())
+  key             String     @unique
+  productId       String
+  userId          String
+  purchaseId      String?    @unique
+  status          String     @default("ACTIVE")  // ACTIVE, INACTIVE, EXPIRED, REVOKED
+  activationCount Int        @default(0)
+  maxActivations  Int        @default(5)
+  expiresAt       DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  product         Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  purchase        Purchase?  @relation(fields: [purchaseId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([status])
+}
+
+// Deployment Tracking
+model Deployment {
+  id              String     @id @default(cuid())
+  productId       String
+  purchaseId      String?    @unique
+  buyerId         String
+  deploymentUrl   String?
+  vercelProjectId String?
+  githubRepoUrl   String?
+  status          String     @default("PENDING")  // PENDING, IN_PROGRESS, DEPLOYED, FAILED
+  errorMessage    String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  product         Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  purchase        Purchase?  @relation(fields: [purchaseId], references: [id], onDelete: SetNull)
+
+  @@index([buyerId])
+  @@index([status])
+}
+
+// Reviews & Ratings
+model Review {
+  id              String     @id @default(cuid())
+  productId       String
+  userId          String
+  rating          Int
+  title           String?
+  content         String?
+  helpful         Int        @default(0)
+  verified        Boolean    @default(false)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  product         Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, userId])
+  @@index([rating])
+}
+
+// Seller Analytics
+model SellerAnalytics {
+  id              String     @id @default(cuid())
+  userId          String     @unique
+  totalRevenue    Float      @default(0)
+  totalDownloads  Int        @default(0)
+  totalProducts   Int        @default(0)
+  averageRating   Float      @default(0)
+  topProduct      String?
+  monthlyRevenue  String     @default("{}")  // JSON object stored as string
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// AI Project Scoping
+model ProjectScope {
+  id              String     @id @default(cuid())
+  userId          String?
+  businessIdea    String
+  recommendedKits String     @default("[]")  // JSON array stored as string
+  features        String     @default("[]")  // JSON array stored as string
+  techStack       String     @default("[]")  // JSON array stored as string
+  timeline        String?
+  roadmapPdf      String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+}
+
+// Notifications
+model Notification {
+  id              String     @id @default(cuid())
+  userId          String
+  type            String     // ORDER_PLACED, ORDER_COMPLETED, DEPLOYMENT_READY, PRODUCT_UPDATED, SALE_MADE, REFUND_ISSUED, LICENSE_EXPIRING, REVIEW_RECEIVED
+  title           String
+  message         String
+  actionUrl       String?
+  read            Boolean    @default(false)
+  createdAt       DateTime   @default(now())
+
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+}
+
+// Platform Settings
+model PlatformSettings {
+  id              String     @id @default(cuid())
+  commissionPercentage Float @default(15)
+  minWithdrawal    Float      @default(100)
+  platformFee     Float      @default(2.9)
+  stripeConnectEnabled Boolean @default(true)
+  verificationRequired Boolean @default(false)
+  updatedAt       DateTime   @updatedAt
+}
